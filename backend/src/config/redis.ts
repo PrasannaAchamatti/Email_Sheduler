@@ -15,7 +15,27 @@ export const redisOptions: RedisOptions = {
   }
 };
 
-export const redisClient = new Redis(redisOptions);
+// If cloud REDIS_URL is provided (e.g. on Railway, Upstash, Render), parse it
+if (env.REDIS_URL) {
+  try {
+    const parsed = new URL(env.REDIS_URL);
+    redisOptions.host = parsed.hostname;
+    redisOptions.port = parseInt(parsed.port, 10) || 6379;
+    if (parsed.password) {
+      redisOptions.password = decodeURIComponent(parsed.password);
+    }
+    if (parsed.username && parsed.username !== 'default') {
+      redisOptions.username = decodeURIComponent(parsed.username);
+    }
+    if (parsed.protocol === 'rediss:') {
+      redisOptions.tls = {};
+    }
+  } catch (err: any) {
+    logger.error('Failed to parse REDIS_URL:', err.message);
+  }
+}
+
+export const redisClient = env.REDIS_URL ? new Redis(env.REDIS_URL, { maxRetriesPerRequest: null }) : new Redis(redisOptions);
 
 redisClient.on('connect', () => {
   logger.info(`Redis client connected to ${env.REDIS_HOST}:${env.REDIS_PORT}`);

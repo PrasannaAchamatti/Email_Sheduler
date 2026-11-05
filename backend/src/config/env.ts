@@ -5,9 +5,10 @@ import { z } from 'zod';
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const envSchema = z.object({
-  PORT: z.string().default('5000').transform((v) => parseInt(v, 10)),
+  PORT: z.union([z.string(), z.number()]).default('5000').transform((v) => typeof v === 'number' ? v : parseInt(v, 10)),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+  REDIS_URL: z.string().optional().default(''),
   REDIS_HOST: z.string().default('127.0.0.1'),
   REDIS_PORT: z.string().default('6379').transform((v) => parseInt(v, 10)),
   REDIS_PASSWORD: z.string().optional().default(''),
