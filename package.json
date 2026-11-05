@@ -1,0 +1,18 @@
+{
+  "name": "reachinbox-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-Grade Email Job Scheduler & Dashboard Inspired by ReachInbox",
+  "scripts": {
+    "install:all": "npm --prefix backend install && npm --prefix frontend install",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:backend": "npm --prefix backend run build",
+    "build:frontend": "npm --prefix frontend run build",
+    "build": "npm --prefix backend run build && npm --prefix frontend run build",
+    "test:backend": "npm --prefix backend test",
+    "prisma:generate": "npm --prefix backend run prisma:generate",
+    "prisma:db:push": "npm --prefix backend run prisma:db:push"
+  }
+}
+

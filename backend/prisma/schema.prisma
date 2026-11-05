@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String            @id @default(cuid())
+  name             String
+  email            String            @unique
+  avatar           String?           @db.Text
+  googleId         String?           @unique
+  passwordHash     String?
+  role             String            @default("USER")
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  senders          Sender[]
+  campaigns        Campaign[]
+  emails           Email[]
+  slackIntegration SlackIntegration?
+  rateLimitEvents  RateLimitEvent[]
+
+  @@map("users")
+}
+
+model Sender {
+  id                    String           @id @default(cuid())
+  userId                String
+  user                  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                  String
+  email                 String
+  smtpHost              String
+  smtpPort              Int
+  smtpUser              String
+  smtpPasswordEncrypted String           @db.Text
+  isEthereal            Boolean          @default(false)
+  isActive              Boolean          @default(true)
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  emails                Email[]
+  rateLimitEvents       RateLimitEvent[]
+
+  @@index([userId])
+  @@index([email])
+  @@map("senders")
+}
+
+model Campaign {
+  id                 String   @id @default(cuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name               String?
+  subject            String
+  body               String   @db.LongText
+  startTime          DateTime
+  delayBetweenEmails Int      @default(2000)
+  hourlyLimit        Int      @default(200)
+  status             String   @default("scheduled")
+  totalRecipients    Int      @default(0)
+  sentCount          Int      @default(0)
+  failedCount        Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  emails             Email[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("campaigns")
+}
+
+model Email {
+  id                 String    @id @default(cuid())
+  campaignId         String?
+  campaign           Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  senderId           String
+  sender             Sender    @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  recipient          String
+  subject            String
+  body               String    @db.LongText
+  scheduledAt        DateTime
+  sentAt             DateTime?
+  status             String    @default("scheduled")
+  attempts           Int       @default(0)
+  errorMessage       String?   @db.Text
+  idempotencyKey     String    @unique
+  messageId          String?
+  etherealPreviewUrl String?   @db.Text
+  bullJobId          String?
+  indexedInElastic   Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([userId, status])
+  @@index([senderId])
+  @@index([scheduledAt])
+  @@index([campaignId])
+  @@map("emails")
+}
+
+model SlackIntegration {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teamId               String
+  teamName             String?
+  channelId            String?
+  channelName          String?
+  accessTokenEncrypted String   @db.Text
+  botUserId            String?
+  connected            Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@map("slack_integrations")
+}
+
+model RateLimitEvent {
+  id                    String   @id @default(cuid())
+  senderId              String
+  sender                Sender   @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hourWindow            String
+  currentCount          Int
+  maxLimit              Int
+  slackNotificationSent Boolean  @default(false)
+  createdAt             DateTime @default(now())
+
+  @@index([senderId, hourWindow])
+  @@index([userId])
+  @@map("rate_limit_events")
+}
+
