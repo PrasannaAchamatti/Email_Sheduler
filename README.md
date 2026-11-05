@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ReachInbox – Production-Grade Email Job Scheduler & Dashboard
 
 A high-throughput, enterprise-style email campaign scheduling engine and dashboard inspired by ReachInbox. Built with a distributed queue architecture (BullMQ + Redis), MySQL persistence (Prisma ORM), Nodemailer with Ethereal SMTP delivery, Elasticsearch full-text indexing, distributed rate limiting with automatic rescheduling, and real OAuth 2.0 integrations with Google and Slack.
@@ -665,3 +666,6 @@ In distributed systems, **absolute exactly-once email delivery cannot be guarant
 2. **Pre-Send Verification**: If a worker crashes and restarts, it checks the database record before issuing any SMTP command.
 3. **No Blind Retries**: Uncertain outcomes are logged with failure details and capped at 3 exponential backoff attempts rather than infinitely retried.
 
+=======
+# Email_Sheduler
+>>>>>>> 36341bad247b4ecc50b5c7006f606a7e224ed562
