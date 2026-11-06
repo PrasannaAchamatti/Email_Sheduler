@@ -15,7 +15,7 @@ export const redisOptions: RedisOptions = {
   }
 };
 
-// If cloud REDIS_URL is provided (e.g. on Railway, Upstash, Render), parse it
+// If cloud REDIS_URL is provided (e.g. on Railway, Upstash, Render, Aiven), parse it
 if (env.REDIS_URL) {
   try {
     const parsed = new URL(env.REDIS_URL);
@@ -35,6 +35,8 @@ if (env.REDIS_URL) {
   } catch (err: any) {
     logger.error('Failed to parse REDIS_URL:', err.message);
   }
+} else if (env.NODE_ENV === 'production') {
+  logger.warn('⚠️ REDIS_URL environment variable is not set. Defaulting to 127.0.0.1:6379. Make sure to set REDIS_URL in Render environment settings!');
 }
 
 export const redisClient = env.REDIS_URL

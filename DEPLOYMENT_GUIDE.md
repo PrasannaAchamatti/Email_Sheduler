@@ -148,3 +148,4 @@ Once completed:
 3. Check the Dashboard metrics (loaded from your live Aiven MySQL database).
 4. Go to **Queue Monitor** in the sidebar to view your live Bull Board (powered by Aiven Redis).
 5. Click **"Compose New Email"** -> Schedule an outreach campaign -> Watch BullMQ process the jobs live!
+
