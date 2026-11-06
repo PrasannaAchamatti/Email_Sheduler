@@ -13,7 +13,8 @@ import {
   Loader2,
   X,
   AlertCircle,
-  HelpCircle
+  HelpCircle,
+  ArrowRight
 } from 'lucide-react';
 import { senderApi } from '../services/api';
 import { Sender } from '../types';
@@ -37,6 +38,7 @@ export const SettingsPage: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
   const [testingId, setTestingId] = useState<string | null>(null);
+  const [savingAnyway, setSavingAnyway] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const {
@@ -44,6 +46,7 @@ export const SettingsPage: React.FC = () => {
     handleSubmit,
     reset,
     setValue,
+    getValues,
     watch,
     formState: { errors, isSubmitting }
   } = useForm<SenderFormData>({
@@ -55,6 +58,7 @@ export const SettingsPage: React.FC = () => {
   });
 
   const watchedHost = watch('smtpHost', '');
+  const watchedSkip = watch('skipVerification', false);
   const isGmail = watchedHost.toLowerCase().includes('gmail.com');
 
   const loadSenders = async () => {
@@ -159,6 +163,28 @@ export const SettingsPage: React.FC = () => {
         err.message ||
         'Failed to connect to SMTP server. Check credentials or enable "Skip live connection test".';
       setModalError(errorMsg);
+    }
+  };
+
+  const handleSaveAnyway = async () => {
+    try {
+      setSavingAnyway(true);
+      const current = getValues();
+      if (!current.email || !current.smtpHost || !current.name) {
+        setModalError('Please fill in sender name, email, host and credentials first.');
+        return;
+      }
+      const res = await senderApi.create({ ...current, skipVerification: true });
+      if (res.data.success) {
+        setFeedback({ type: 'success', message: `Added sender: ${current.email} (Saved without live check)` });
+        reset();
+        setIsAddModalOpen(false);
+        await loadSenders();
+      }
+    } catch (err: any) {
+      setModalError(err.response?.data?.error || 'Failed to save sender');
+    } finally {
+      setSavingAnyway(false);
     }
   };
 
@@ -299,13 +325,27 @@ export const SettingsPage: React.FC = () => {
               </button>
             </div>
 
-            {/* In-Modal Error Banner */}
+            {/* In-Modal Error Banner with 1-Click "Save Anyway" bypass */}
             {modalError && (
-              <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2.5">
-                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <span className="font-bold block text-rose-900">Connection or Verification Error:</span>
-                  <p className="mt-0.5 leading-relaxed">{modalError}</p>
+              <div className="mb-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs space-y-2.5">
+                <div className="flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <span className="font-bold block text-rose-900">Verification Result:</span>
+                    <p className="mt-0.5 leading-relaxed">{modalError}</p>
+                  </div>
+                </div>
+                <div className="pt-2 border-t border-rose-200/80 flex items-center justify-between flex-wrap gap-2">
+                  <span className="text-[11px] text-rose-700 font-medium">Bypass connection test &amp; save now?</span>
+                  <button
+                    type="button"
+                    onClick={handleSaveAnyway}
+                    disabled={savingAnyway}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs shadow-sm transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    {savingAnyway ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
+                    <span>Save Sender Anyway</span>
+                  </button>
                 </div>
               </div>
             )}
@@ -445,7 +485,7 @@ export const SettingsPage: React.FC = () => {
                   <span>Skip live connection handshake test (save credentials directly)</span>
                 </label>
                 <p className="text-[10px] text-[#9CA3AF] pl-5 mt-0.5">
-                  Check this if your local network or firewall blocks port 587/465 or you want to verify later.
+                  Check this if your network or firewall restricts outgoing SMTP traffic on port 587/465.
                 </p>
               </div>
 
@@ -463,7 +503,15 @@ export const SettingsPage: React.FC = () => {
                   className="px-4 py-1.5 rounded-lg bg-[#1E3A8A] hover:bg-[#172554] text-white text-xs font-semibold shadow-sm flex items-center gap-2"
                 >
                   {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>{isSubmitting ? 'Verifying & Saving...' : 'Save Sender'}</span>
+                  <span>
+                    {isSubmitting
+                      ? watchedSkip
+                        ? 'Saving Sender...'
+                        : 'Verifying & Saving...'
+                      : watchedSkip
+                      ? 'Save Sender (Instant)'
+                      : 'Save Sender'}
+                  </span>
                 </button>
               </div>
             </form>

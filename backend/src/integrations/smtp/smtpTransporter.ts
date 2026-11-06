@@ -49,6 +49,9 @@ export function createTransporter(config: SmtpConfig): Transporter {
       user: config.user,
       pass: config.pass
     },
+    connectionTimeout: 8000,
+    greetingTimeout: 8000,
+    socketTimeout: 15000,
     // Pool options for high-throughput
     pool: true,
     maxConnections: 5,
@@ -86,14 +89,44 @@ export async function createEtherealAccount(): Promise<{
 }
 
 /**
- * Verify SMTP transporter connection
+ * Verify SMTP transporter connection with strict 6-second timeout
+ * so that firewalled/blocked ports never hang the server or client.
  */
 export async function verifySmtpConnection(config: SmtpConfig): Promise<boolean> {
-  const transporter = createTransporter(config);
+  const testTransporter = nodemailer.createTransport({
+    host: config.host,
+    port: config.port,
+    secure: config.port === 465,
+    auth: {
+      user: config.user,
+      pass: config.pass
+    },
+    connectionTimeout: 5000,
+    greetingTimeout: 5000,
+    socketTimeout: 6000
+  });
+
+  const verifyPromise = testTransporter.verify();
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(
+      () =>
+        reject(
+          new Error(
+            `Connection to ${config.host}:${config.port} timed out after 6 seconds. Outbound SMTP traffic on this port may be firewalled or unreachable.`
+          )
+        ),
+      6000
+    )
+  );
+
   try {
-    await transporter.verify();
+    await Promise.race([verifyPromise, timeoutPromise]);
+    testTransporter.close();
     return true;
   } catch (err: any) {
+    try {
+      testTransporter.close();
+    } catch (_) {}
     logger.error(`SMTP connection verification failed for ${config.user}@${config.host}:`, err.message);
     throw err;
   }
@@ -118,31 +151,29 @@ export async function sendEmailThroughSmtp(
       subject: payload.subject,
       text: isHtml ? payload.body.replace(/<[^>]+>/g, '') : payload.body,
       html: isHtml ? payload.body : `<div style="font-family: sans-serif; white-space: pre-wrap;">${payload.body}</div>`,
-      messageId: deterministicMessageId,
       headers: {
-        'X-ReachInbox-Email-ID': payload.emailId
-      }
+        'X-ReachInbox-Job-Id': payload.emailId,
+        'X-Entity-Ref-ID': payload.emailId
+      },
+      messageId: deterministicMessageId
     });
 
     const previewUrl = nodemailer.getTestMessageUrl(info) || undefined;
-    const finalMessageId = info.messageId || deterministicMessageId;
 
-    logger.info(`SMTP send successful for email ${payload.emailId} to ${payload.to}. MessageId: ${finalMessageId}`);
-    if (previewUrl) {
-      logger.info(`Ethereal preview URL: ${previewUrl}`);
-    }
+    logger.info(
+      `Email ${payload.emailId} sent to ${payload.to} via ${smtpConfig.user} (MessageId: ${info.messageId})`
+    );
 
     return {
       success: true,
-      messageId: finalMessageId,
-      previewUrl: previewUrl || undefined
+      messageId: info.messageId,
+      previewUrl: previewUrl ? String(previewUrl) : undefined
     };
   } catch (err: any) {
-    logger.error(`SMTP send failed for email ${payload.emailId} to ${payload.to}:`, err.message);
+    logger.error(`Failed to send email ${payload.emailId} through ${smtpConfig.user}:`, err.message);
     return {
       success: false,
       errorMessage: err.message || 'SMTP delivery failure'
     };
   }
 }
-

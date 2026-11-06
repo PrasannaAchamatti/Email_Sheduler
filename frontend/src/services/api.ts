@@ -21,6 +21,7 @@ function getBaseApiUrl(): string {
 const api = axios.create({
   baseURL: getBaseApiUrl(),
   withCredentials: true,
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json'
   }
