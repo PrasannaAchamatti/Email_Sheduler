@@ -46,6 +46,7 @@ app.use(
         allowedOrigins.includes(origin) ||
         origin.endsWith('.vercel.app') ||
         origin.endsWith('.railway.app') ||
+        origin.endsWith('.onrender.com') ||
         origin.includes('localhost')
       ) {
         return callback(null, true);

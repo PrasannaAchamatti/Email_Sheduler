@@ -28,14 +28,21 @@ if (env.REDIS_URL) {
       redisOptions.username = decodeURIComponent(parsed.username);
     }
     if (parsed.protocol === 'rediss:') {
-      redisOptions.tls = {};
+      redisOptions.tls = {
+        rejectUnauthorized: false
+      };
     }
   } catch (err: any) {
     logger.error('Failed to parse REDIS_URL:', err.message);
   }
 }
 
-export const redisClient = env.REDIS_URL ? new Redis(env.REDIS_URL, { maxRetriesPerRequest: null }) : new Redis(redisOptions);
+export const redisClient = env.REDIS_URL
+  ? new Redis(env.REDIS_URL, {
+      maxRetriesPerRequest: null,
+      tls: env.REDIS_URL.startsWith('rediss:') ? { rejectUnauthorized: false } : undefined
+    })
+  : new Redis(redisOptions);
 
 redisClient.on('connect', () => {
   logger.info(`Redis client connected to ${env.REDIS_HOST}:${env.REDIS_PORT}`);
