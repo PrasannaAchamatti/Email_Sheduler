@@ -11,8 +11,15 @@ import {
   Pagination
 } from '../types';
 
+function getBaseApiUrl(): string {
+  const raw = import.meta.env.VITE_API_URL?.trim();
+  if (!raw) return 'http://localhost:5000/api';
+  const clean = raw.replace(/\/+$/, '');
+  return clean.endsWith('/api') ? clean : `${clean}/api`;
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: getBaseApiUrl(),
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json'

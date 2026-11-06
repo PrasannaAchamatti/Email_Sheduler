@@ -54,7 +54,14 @@ export const QueueMonitorPage: React.FC = () => {
     }
   };
 
-  const bullBoardUrl = 'http://localhost:5000/admin/queues/';
+  const getBullBoardUrl = (): string => {
+    const raw = (import.meta.env.VITE_API_URL || '').trim();
+    if (!raw) return 'http://localhost:5000/admin/queues/';
+    const clean = raw.replace(/\/+$/, '').replace(/\/api$/, '');
+    return `${clean}/admin/queues/`;
+  };
+
+  const bullBoardUrl = getBullBoardUrl();
 
   return (
     <div className="space-y-6">
