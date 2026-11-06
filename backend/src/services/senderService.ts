@@ -14,6 +14,7 @@ export interface CreateSenderInput {
   smtpPort: number;
   smtpUser: string;
   smtpPassword: string;
+  skipVerification?: boolean;
 }
 
 export class SenderService {
@@ -44,15 +45,34 @@ export class SenderService {
    * Create a new custom SMTP sender
    */
   public static async createSender(userId: string, input: CreateSenderInput) {
-    // Verify connection first
-    const config: SmtpConfig = {
-      host: input.smtpHost,
-      port: input.smtpPort,
-      user: input.smtpUser,
-      pass: input.smtpPassword
-    };
+    if (!input.skipVerification) {
+      const config: SmtpConfig = {
+        host: input.smtpHost,
+        port: input.smtpPort,
+        user: input.smtpUser,
+        pass: input.smtpPassword
+      };
 
-    await verifySmtpConnection(config);
+      try {
+        await verifySmtpConnection(config);
+      } catch (err: any) {
+        const msg = err.message || '';
+        if (
+          input.smtpHost.includes('gmail.com') &&
+          (msg.includes('535') || msg.includes('Username and Password not accepted') || msg.includes('BadCredentials'))
+        ) {
+          throw new Error(
+            'Gmail rejected credentials (535). Gmail requires a 16-character App Password (generate at https://myaccount.google.com/apppasswords), not your normal Google password.'
+          );
+        }
+        if (msg.includes('ETIMEDOUT') || msg.includes('ECONNREFUSED')) {
+          throw new Error(
+            `Unable to connect to SMTP server at ${input.smtpHost}:${input.smtpPort}. Please verify host and port, or check "Skip connection test" to save anyway.`
+          );
+        }
+        throw new Error(`SMTP Verification failed: ${msg}`);
+      }
+    }
 
     const encryptedPass = encrypt(input.smtpPassword);
 
@@ -135,8 +155,21 @@ export class SenderService {
       pass: decryptedPass
     };
 
-    const isConnected = await verifySmtpConnection(config);
-    return { success: isConnected, message: 'SMTP connection verified successfully' };
+    try {
+      const isConnected = await verifySmtpConnection(config);
+      return { success: isConnected, message: 'SMTP connection verified successfully' };
+    } catch (err: any) {
+      const msg = err.message || '';
+      if (
+        sender.smtpHost.includes('gmail.com') &&
+        (msg.includes('535') || msg.includes('Username and Password not accepted') || msg.includes('BadCredentials'))
+      ) {
+        throw new Error(
+          'Gmail rejected credentials (535). Please ensure 2-Step Verification is enabled and use a 16-character Google App Password.'
+        );
+      }
+      throw new Error(`SMTP connection test failed: ${msg}`);
+    }
   }
 
   /**
@@ -155,4 +188,3 @@ export class SenderService {
     return { success: true };
   }
 }
-

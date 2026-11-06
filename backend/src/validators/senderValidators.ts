@@ -6,6 +6,6 @@ export const createSenderSchema = z.object({
   smtpHost: z.string().min(1, 'SMTP host is required'),
   smtpPort: z.coerce.number().int().min(1).max(65535),
   smtpUser: z.string().min(1, 'SMTP username is required'),
-  smtpPassword: z.string().min(1, 'SMTP password is required')
+  smtpPassword: z.string().min(1, 'SMTP password is required'),
+  skipVerification: z.boolean().optional().default(false)
 });
-

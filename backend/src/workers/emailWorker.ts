@@ -8,7 +8,7 @@ import { RateLimitService } from '../services/rateLimitService';
 import { sendEmailThroughSmtp, SmtpConfig } from '../integrations/smtp/smtpTransporter';
 import { decrypt } from '../utils/encryption';
 import { updateEmailStatusInElastic } from '../integrations/elasticsearch/esClient';
-import { sendSlackRateLimitAlert } from '../integrations/slack/slackClient';
+import { sendSlackRateLimitAlert, sendSlackWebhookMessage } from '../integrations/slack/slackClient';
 import { getBullJobId } from '../utils/idempotency';
 
 export let emailWorker: Worker<EmailJobData> | null = null;
@@ -94,9 +94,8 @@ export function startEmailWorker(): Worker<EmailJobData> {
               where: { userId }
             });
 
-            if (slackIntegration && slackIntegration.connected && slackIntegration.accessTokenEncrypted) {
-              const decryptedToken = decrypt(slackIntegration.accessTokenEncrypted);
-              await sendSlackRateLimitAlert(decryptedToken, slackIntegration.channelId || undefined, {
+            if (slackIntegration && slackIntegration.connected) {
+              const alertData = {
                 senderEmail: emailRecord.sender.email,
                 hourlyLimit: rateLimitCheck.maxLimit,
                 currentCount: rateLimitCheck.currentCount,
@@ -104,7 +103,14 @@ export function startEmailWorker(): Worker<EmailJobData> {
                 campaignSubject: emailRecord.campaign?.subject,
                 campaignId: emailRecord.campaignId || undefined,
                 resumeTime: rateLimitCheck.nextWindowStart
-              });
+              };
+
+              if (slackIntegration.webhookUrl) {
+                await sendSlackWebhookMessage(slackIntegration.webhookUrl, alertData);
+              } else if (slackIntegration.accessTokenEncrypted) {
+                const decryptedToken = decrypt(slackIntegration.accessTokenEncrypted);
+                await sendSlackRateLimitAlert(decryptedToken, slackIntegration.channelId || undefined, alertData);
+              }
             }
           } catch (slackErr: any) {
             logger.error('Error dispatching Slack rate limit notification:', slackErr);

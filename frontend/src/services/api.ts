@@ -126,6 +126,8 @@ export const emailApi = {
 
 export const slackApi = {
   getConnectUrl: () => api.get<{ success: boolean; data: { url: string } }>('/slack/connect'),
+  saveWebhook: (data: { webhookUrl: string; channelName?: string }) =>
+    api.post<{ success: boolean; data: any; message: string }>('/slack/webhook', data),
   getStatus: () => api.get<{ success: boolean; data: SlackStatus }>('/slack/status'),
   disconnect: () => api.post<{ success: boolean }>('/slack/disconnect'),
   sendTestAlert: () => api.post<{ success: boolean; message: string }>('/slack/test-alert')

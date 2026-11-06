@@ -94,10 +94,12 @@ export interface RateLimitUsage {
 
 export interface SlackStatus {
   connected: boolean;
+  type?: 'webhook' | 'oauth' | null;
   teamId?: string | null;
   teamName?: string | null;
   channelId?: string | null;
   channelName?: string | null;
+  webhookUrl?: string | null;
   connectedAt?: string | null;
 }
 

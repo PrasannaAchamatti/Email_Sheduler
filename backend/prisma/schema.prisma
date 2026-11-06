@@ -1,6 +1,6 @@
 generator client {
   provider      = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-3.0.x", "debian-openssl-1.1.x", "linux-musl-openssl-3.0.x", "linux-musl"]
+  binaryTargets = ["native"]
 }
 
 datasource db {
@@ -107,11 +107,12 @@ model SlackIntegration {
   id                   String   @id @default(cuid())
   userId               String   @unique
   user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  teamId               String
+  teamId               String?
   teamName             String?
   channelId            String?
   channelName          String?
-  accessTokenEncrypted String   @db.Text
+  accessTokenEncrypted String?  @db.Text
+  webhookUrl           String?  @db.Text
   botUserId            String?
   connected            Boolean  @default(true)
   createdAt            DateTime @default(now())
