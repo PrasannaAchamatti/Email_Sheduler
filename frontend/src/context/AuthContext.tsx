@@ -36,14 +36,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginGoogle = async (idToken: string) => {
     const res = await authApi.loginGoogle(idToken);
-    if (res.data.success) {
+    if (res.data.success && res.data.data) {
+      if (res.data.data.token) {
+        localStorage.setItem('reachinbox_token', res.data.data.token);
+      }
       setUser(res.data.data.user);
     }
   };
 
   const loginDemo = async (email?: string, name?: string, avatar?: string) => {
     const res = await authApi.loginDemo(email, name, avatar);
-    if (res.data.success) {
+    if (res.data.success && res.data.data) {
+      if (res.data.data.token) {
+        localStorage.setItem('reachinbox_token', res.data.data.token);
+      }
       setUser(res.data.data.user);
     }
   };
@@ -52,6 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await authApi.logout();
     } finally {
+      localStorage.removeItem('reachinbox_token');
       setUser(null);
       window.location.href = '/login';
     }

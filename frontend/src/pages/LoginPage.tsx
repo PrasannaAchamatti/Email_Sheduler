@@ -108,7 +108,11 @@ export const LoginPage: React.FC = () => {
       setShowGoogleModal(false);
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Authentication failed');
+      if (err.message === 'Network Error' || err.code === 'ERR_NETWORK') {
+        setError('Cannot connect to backend API. If Render free tier is waking up, please wait ~30-40 seconds and try again.');
+      } else {
+        setError(err.response?.data?.error || err.message || 'Authentication failed');
+      }
     } finally {
       setSigningAccount(null);
     }
@@ -147,7 +151,11 @@ export const LoginPage: React.FC = () => {
       await loginDemo('evaluator@reachinbox.test', 'ReachInbox Evaluator');
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Login failed');
+      if (err.message === 'Network Error' || err.code === 'ERR_NETWORK') {
+        setError('Cannot connect to backend API. If Render free tier is waking up, please wait ~30-40 seconds and try again.');
+      } else {
+        setError(err.response?.data?.error || err.message || 'Login failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -294,6 +302,12 @@ export const LoginPage: React.FC = () => {
                 to continue to <strong className="text-[#1E3A8A]">ReachInbox Scheduler</strong>
               </p>
             </div>
+
+            {error && (
+              <div className="mx-5 mt-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 leading-relaxed">
+                {error}
+              </div>
+            )}
 
             {/* List of User's Actual Accounts on this PC */}
             {!isAddingNew && savedAccounts.length > 0 ? (

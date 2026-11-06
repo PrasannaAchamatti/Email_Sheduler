@@ -19,13 +19,23 @@ const api = axios.create({
   }
 });
 
+// Attach Authorization Bearer token from localStorage for seamless cross-domain Vercel <-> Render auth
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('reachinbox_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // If unauthorized and not on login page, redirect
+    // If unauthorized and not on login page, clear token and redirect
     if (error.response?.status === 401 && !window.location.pathname.includes('/login')) {
+      localStorage.removeItem('reachinbox_token');
       // Don't auto-redirect on check me
-      if (!error.config.url.includes('/auth/me')) {
+      if (!error.config?.url?.includes('/auth/me')) {
         window.location.href = '/login';
       }
     }
