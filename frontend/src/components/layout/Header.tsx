@@ -46,22 +46,28 @@ export const Header: React.FC<HeaderProps> = ({ title, subtitle }) => {
           </button>
 
           {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-56 rounded-xl bg-white border border-[#E5E7EB] shadow-xl py-1 z-50">
-              <div className="px-4 py-2.5 border-b border-[#E5E7EB]">
-                <p className="text-xs font-semibold text-[#090B10]">{user?.name}</p>
-                <p className="text-[11px] text-[#4B5563] truncate">{user?.email}</p>
+            <>
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setDropdownOpen(false)}
+              />
+              <div className="absolute right-0 mt-2 w-56 rounded-xl bg-white border border-[#E5E7EB] shadow-xl py-1 z-50">
+                <div className="px-4 py-2.5 border-b border-[#E5E7EB]">
+                  <p className="text-xs font-semibold text-[#090B10]">{user?.name}</p>
+                  <p className="text-[11px] text-[#4B5563] truncate">{user?.email}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    logout();
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-xs text-rose-600 hover:bg-rose-50 font-medium transition-colors cursor-pointer"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Sign Out</span>
+                </button>
               </div>
-              <button
-                onClick={() => {
-                  setDropdownOpen(false);
-                  logout();
-                }}
-                className="w-full flex items-center gap-2 px-4 py-2.5 text-xs text-rose-600 hover:bg-rose-50 font-medium transition-colors"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>Sign Out</span>
-              </button>
-            </div>
+            </>
           )}
         </div>
       </div>

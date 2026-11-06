@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import {
   LayoutDashboard,
   CalendarClock,
@@ -8,7 +9,8 @@ import {
   Cpu,
   Slack,
   Settings,
-  MailCheck
+  MailCheck,
+  LogOut
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -16,6 +18,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ onOpenCompose }) => {
+  const { logout } = useAuth();
   const navItems = [
     { label: 'Dashboard', path: '/', icon: LayoutDashboard },
     { label: 'Scheduled Emails', path: '/scheduled', icon: CalendarClock },
@@ -73,16 +76,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenCompose }) => {
         })}
       </nav>
 
-      {/* Footer Info */}
-      <div className="p-4 border-t border-[#E5E7EB] text-xs text-[#4B5563]">
-        <div className="flex items-center justify-between mb-1">
-          <span className="font-medium text-[#090B10]">Engine Status</span>
-          <span className="inline-flex items-center gap-1.5 text-emerald-600 font-semibold">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            Operational
-          </span>
+      {/* Footer Info & Sign Out */}
+      <div className="p-4 border-t border-[#E5E7EB] text-xs text-[#4B5563] space-y-3">
+        <button
+          onClick={logout}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-rose-600 hover:bg-rose-50 font-semibold text-xs transition-colors border border-rose-200 shadow-sm cursor-pointer"
+        >
+          <LogOut className="w-3.5 h-3.5 shrink-0" />
+          <span>Sign Out</span>
+        </button>
+
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <span className="font-medium text-[#090B10]">Engine Status</span>
+            <span className="inline-flex items-center gap-1.5 text-emerald-600 font-semibold text-[11px]">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Operational
+            </span>
+          </div>
+          <p className="text-[11px] text-[#6B7280]">BullMQ • Redis • MySQL</p>
         </div>
-        <p className="text-[11px] text-[#6B7280]">BullMQ • Redis • MySQL</p>
       </div>
     </aside>
   );

@@ -118,7 +118,12 @@ export class AuthController {
   }
 
   public static async logout(req: Request, res: Response) {
-    res.clearCookie(COOKIE_NAME);
+    res.clearCookie(COOKIE_NAME, {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
+      path: '/'
+    });
     res.status(200).json({
       success: true,
       message: 'Logged out successfully'

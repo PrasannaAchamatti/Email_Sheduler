@@ -18,13 +18,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   const refreshUser = async () => {
+    // If no token exists in localStorage, do not attempt auto-login
+    const token = localStorage.getItem('reachinbox_token');
+    if (!token) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await authApi.getMe();
       if (res.data.success && res.data.data) {
         setUser(res.data.data);
+      } else {
+        setUser(null);
+        localStorage.removeItem('reachinbox_token');
       }
     } catch (err) {
       setUser(null);
+      localStorage.removeItem('reachinbox_token');
     } finally {
       setLoading(false);
     }
@@ -56,11 +68,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      await authApi.logout();
-    } finally {
       localStorage.removeItem('reachinbox_token');
       setUser(null);
-      window.location.href = '/login';
+      await authApi.logout();
+    } catch (err) {
+      console.warn('Backend logout call completed with fallback:', err);
+    } finally {
+      localStorage.removeItem('reachinbox_token');
+      sessionStorage.clear();
+      setUser(null);
+      window.location.replace('/login');
     }
   };
 
